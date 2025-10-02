@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SETU API - NAMASTE & ICD-11 Integration Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+            color: white;
+            padding: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            border-bottom: 2px solid #000;
+            padding-bottom: 0.5rem;
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            transition: border-color 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #000;
+        }
+
+        .autocomplete-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #000;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .autocomplete-results.active {
+            display: block;
+        }
+
+        .autocomplete-item {
+            padding: 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            transition: background 0.2s;
+        }
+
+        .autocomplete-item:hover {
+            background: #f5f5f5;
+        }
+
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+
+        .code-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: #000;
+            color: white;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-right: 0.5rem;
+            font-family: monospace;
+        }
+
+        .code-badge.namaste {
+            background: #2563eb;
+        }
+
+        .code-badge.icd11 {
+            background: #059669;
+        }
+
+        .code-badge.tm2 {
+            background: #dc2626;
+        }
+
+        .selected-diagnosis {
+            background: #f0f9ff;
+            border: 2px solid #2563eb;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .diagnosis-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .diagnosis-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .remove-btn {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .remove-btn:hover {
+            background: #991b1b;
+        }
+
+        .code-mappings {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .code-mapping {
+            background: white;
+            padding: 1rem;
+            border-radius: 6px;
+            border-left: 4px solid #2563eb;
+        }
+
+        .code-mapping.icd11 {
+            border-left-color: #059669;
+        }
+
+        .code-mapping.tm2 {
+            border-left-color: #dc2626;
+        }
+
+        .code-label {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            opacity: 0.7;
+        }
+
+        .code-value {
+            font-family: monospace;
+            font-size: 1.1rem;
+        }
+
+        .btn {
+            background: #000;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s;
+            margin-top: 1rem;
+        }
+
+        .btn:hover {
+            background: #333;
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .fhir-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .json-key {
+            color: #9cdcfe;
+        }
+
+        .json-string {
+            color: #ce9178;
+        }
+
+        .json-number {
+            color: #b5cea8;
+        }
+
+        .json-boolean {
+            color: #569cd6;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #000;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.7;
+            margin-top: 0.5rem;
+        }
+
+        .success-message {
+            background: #d1fae5;
+            border: 2px solid #059669;
+            color: #065f46;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .success-message.active {
+            display: block;
+        }
+
+        .tab-container {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #eee;
+        }
+
+        .tab {
+            padding: 1rem 2rem;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 1rem;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            border-bottom-color: #000;
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .info-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .container {
+                padding: 0 1rem;
+            }
+
+            .code-mappings {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏥 SETU API - NAMASTE & ICD-11 Integration Demo</h1>
+        <p>Ministry of Ayush - Traditional Medicine EMR Integration System</p>
+    </div>
+
+    <div class="container">
+        <!-- Statistics Dashboard -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">4,500+</div>
+                <div class="stat-label">NAMASTE Codes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">529</div>
+                <div class="stat-label">ICD-11 TM2 Disorders</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">196</div>
+                <div class="stat-label">TM2 Pattern Codes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">100%</div>
+                <div class="stat-label">FHIR R4 Compliant</div>
+            </div>
+        </div>
+
+        <!-- Search & Add Diagnosis -->
+        <div class="card">
+            <h2>🔍 Search & Add Diagnosis</h2>
+            <div class="info-box">
+                <strong>Info:</strong> Search for traditional medicine diagnoses using NAMASTE terminologies. The system will automatically map to ICD-11 TM2 and Biomedicine codes.
+            </div>
+            <div class="search-container">
+                <input 
+                    type="text" 
+                    class="search-input" 
+                    id="diagnosisSearch" 
+                    placeholder="Search for diagnosis (e.g., Vata Imbalance, Pitta Dosha, Diabetes)..."
+                    autocomplete="off"
+                >
+                <div class="autocomplete-results" id="autocompleteResults"></div>
+            </div>
+        </div>
+
+        <!-- Selected Diagnoses -->
+        <div class="card">
+            <h2>📋 Selected Diagnoses (Problem List)</h2>
+            <div id="selectedDiagnoses">
+                <p style="color: #999; text-align: center; padding: 2rem;">No diagnoses selected yet. Search and add diagnoses above.</p>
+            </div>
+            <button class="btn" id="generateFhirBtn" disabled>Generate FHIR Bundle</button>
+            <div class="success-message" id="successMessage">
+                ✓ FHIR Bundle generated successfully! Ready for EMR integration.
+            </div>
+        </div>
+
+        <!-- FHIR Output -->
+        <div class="card">
+            <div class="tab-container">
+                <button class="tab active" data-tab="fhir">FHIR R4 Bundle</button>
+                <button class="tab" data-tab="api">API Response</button>
+                <button class="tab" data-tab="mapping">Code Mapping</button>
+            </div>
+
+            <div class="tab-content active" id="fhir">
+                <h2>📄 FHIR R4 Bundle Output</h2>
+                <pre class="fhir-output" id="fhirOutput">// FHIR Bundle will appear here after generating...</pre>
+            </div>
+
+            <div class="tab-content" id="api">
+                <h2>🔌 API Endpoint Details</h2>
+                <pre class="fhir-output" id="apiOutput">// API endpoint information...</pre>
+            </div>
+
+            <div class="tab-content" id="mapping">
+                <h2>🔗 Code Mapping Details</h2>
+                <pre class="fhir-output" id="mappingOutput">// Code mapping information...</pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Hardcoded data for demo
+        const diagnosisDatabase = [
+            {
+                id: 1,
+                name: "Vata Imbalance (Vata Vriddhi)",
+                namaste: "NAMASTE-AYU-001",
+                icd11: "MD1A.0",
+                tm2: "TM2-VAT-001",
+                system: "Ayurveda",
+                description: "Excess Vata dosha causing dryness, anxiety, and irregular digestion"
+            },
+            {
+                id: 2,
+                name: "Pitta Imbalance (Pitta Vriddhi)",
+                namaste: "NAMASTE-AYU-002",
+                icd11: "MD1A.1",
+                tm2: "TM2-PIT-001",
+                system: "Ayurveda",
+                description: "Excess Pitta dosha causing inflammation, acidity, and anger"
+            },
+            {
+                id: 3,
+                name: "Kapha Imbalance (Kapha Vriddhi)",
+                namaste: "NAMASTE-AYU-003",
+                icd11: "MD1A.2",
+                tm2: "TM2-KAP-001",
+                system: "Ayurveda",
+                description: "Excess Kapha dosha causing heaviness, congestion, and lethargy"
+            },
+            {
+                id: 4,
+                name: "Madhumeha (Diabetes Mellitus)",
+                namaste: "NAMASTE-AYU-456",
+                icd11: "5A00",
+                tm2: "TM2-MET-045",
+                system: "Ayurveda",
+                description: "Sweet urine disorder - Diabetes mellitus in traditional medicine"
+            },
+            {
+                id: 5,
+                name: "Amavata (Rheumatoid Arthritis)",
+                namaste: "NAMASTE-AYU-789",
+                icd11: "FA20.0",
+                tm2: "TM2-RHE-012",
+                system: "Ayurveda",
+                description: "Accumulation of Ama in joints causing pain and stiffness"
+            },
+            {
+                id: 6,
+                name: "Pandu Roga (Anemia)",
+                namaste: "NAMASTE-AYU-234",
+                icd11: "3A00",
+                tm2: "TM2-BLD-008",
+                system: "Ayurveda",
+                description: "Paleness disorder - Anemia and blood deficiency"
+            },
+            {
+                id: 7,
+                name: "Kasa (Cough)",
+                namaste: "NAMASTE-AYU-567",
+                icd11: "MD12",
+                tm2: "TM2-RES-023",
+                system: "Ayurveda",
+                description: "Respiratory disorder characterized by coughing"
+            },
+            {
+                id: 8,
+                name: "Vali Narai Migu Noigal (Siddha Geriatric Disorders)",
+                namaste: "NAMASTE-SID-101",
+                icd11: "MG2A",
+                tm2: "TM2-AGE-034",
+                system: "Siddha",
+                description: "Age-related disorders in Siddha medicine"
+            },
+            {
+                id: 9,
+                name: "Madakkuri Noigal (Skin Diseases - Unani)",
+                namaste: "NAMASTE-UNA-205",
+                icd11: "EA00",
+                tm2: "TM2-DRM-056",
+                system: "Unani",
+                description: "Skin disorders and dermatological conditions"
+            },
+            {
+                id: 10,
+                name: "Nazla Wa Zukam (Common Cold - Unani)",
+                namaste: "NAMASTE-UNA-301",
+                icd11: "CA00",
+                tm2: "TM2-INF-078",
+                system: "Unani",
+                description: "Upper respiratory tract infection - Common cold"
+            }
+        ];
+
+        let selectedDiagnoses = [];
+        const searchInput = document.getElementById('diagnosisSearch');
+        const autocompleteResults = document.getElementById('autocompleteResults');
+        const selectedDiagnosesContainer = document.getElementById('selectedDiagnoses');
+        const generateBtn = document.getElementById('generateFhirBtn');
+        const fhirOutput = document.getElementById('fhirOutput');
+        const apiOutput = document.getElementById('apiOutput');
+        const mappingOutput = document.getElementById('mappingOutput');
+        const successMessage = document.getElementById('successMessage');
+
+        // Search functionality
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            if (query.length < 2) {
+                autocompleteResults.classList.remove('active');
+                return;
+            }
+
+            const results = diagnosisDatabase.filter(d => 
+                d.name.toLowerCase().includes(query) ||
+                d.description.toLowerCase().includes(query) ||
+                d.system.toLowerCase().includes(query)
+            );
+
+            if (results.length > 0) {
+                autocompleteResults.innerHTML = results.map(d => `
+                    <div class="autocomplete-item" data-id="${d.id}">
+                        <div>
+                            <strong>${d.name}</strong>
+                            <span class="code-badge namaste">${d.namaste}</span>
+                        </div>
+                        <div style="font-size: 0.85rem; color: #666; margin-top: 0.25rem;">
+                            ${d.system} - ${d.description}
+                        </div>
+                    </div>
+                `).join('');
+                autocompleteResults.classList.add('active');
+            } else {
+                autocompleteResults.innerHTML = '<div class="autocomplete-item">No results found</div>';
+                autocompleteResults.classList.add('active');
+            }
+        });
+
+        // Add diagnosis
+        autocompleteResults.addEventListener('click', (e) => {
+            const item = e.target.closest('.autocomplete-item');
+            if (!item) return;
+
+            const id = parseInt(item.dataset.id);
+            const diagnosis = diagnosisDatabase.find(d => d.id === id);
+            
+            if (diagnosis && !selectedDiagnoses.find(d => d.id === id)) {
+                selectedDiagnoses.push(diagnosis);
+                renderSelectedDiagnoses();
+                searchInput.value = '';
+                autocompleteResults.classList.remove('active');
+            }
+        });
+
+        // Close autocomplete when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.search-container')) {
+                autocompleteResults.classList.remove('active');
+            }
+        });
+
+        // Render selected diagnoses
+        function renderSelectedDiagnoses() {
+            if (selectedDiagnoses.length === 0) {
+                selectedDiagnosesContainer.innerHTML = '<p style="color: #999; text-align: center; padding: 2rem;">No diagnoses selected yet. Search and add diagnoses above.</p>';
+                generateBtn.disabled = true;
+                return;
+            }
+
+            selectedDiagnosesContainer.innerHTML = selectedDiagnoses.map(d => `
+                <div class="selected-diagnosis">
+                    <div class="diagnosis-header">
+                        <div class="diagnosis-title">${d.name}</div>
+                        <button class="remove-btn" data-id="${d.id}">Remove</button>
+                    </div>
+                    <div style="font-size: 0.9rem; color: #666; margin-bottom: 1rem;">
+                        ${d.system} - ${d.description}
+                    </div>
+                    <div class="code-mappings">
+                        <div class="code-mapping">
+                            <div class="code-label">NAMASTE Code</div>
+                            <div class="code-value">${d.namaste}</div>
+                        </div>
+                        <div class="code-mapping icd11">
+                            <div class="code-label">ICD-11 Code</div>
+                            <div class="code-value">${d.icd11}</div>
+                        </div>
+                        <div class="code-mapping tm2">
+                            <div class="code-label">TM2 Code</div>
+                            <div class="code-value">${d.tm2}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            generateBtn.disabled = false;
+
+            // Add remove handlers
+            document.querySelectorAll('.remove-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = parseInt(e.target.dataset.id);
+                    selectedDiagnoses = selectedDiagnoses.filter(d => d.id !== id);
+                    renderSelectedDiagnoses();
+                    successMessage.classList.remove('active');
+                });
+            });
+        }
+
+        // Generate FHIR Bundle
+        generateBtn.addEventListener('click', () => {
+            const bundle = generateFHIRBundle();
+            fhirOutput.textContent = JSON.stringify(bundle, null, 2);
+            
+            // Generate API output
+            const apiInfo = {
+                endpoint: "https://api.setu.gov.in/fhir/r4/Bundle",
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/fhir+json",
+                    "Authorization": "Bearer ABHA_TOKEN_HERE",
+                    "X-Request-ID": generateUUID()
+                },
+                authentication: "OAuth 2.0 with ABHA token",
+                compliance: ["FHIR R4", "ISO 22600", "EHR Standards 2016"],
+                response_status: 201,
+                response_time: "145ms"
+            };
+            apiOutput.textContent = JSON.stringify(apiInfo, null, 2);
+
+            // Generate mapping output
+            const mappingInfo = {
+                mapping_service: "SETU NAMASTE-ICD11 Terminology Service",
+                total_mappings: selectedDiagnoses.length,
+                mappings: selectedDiagnoses.map(d => ({
+                    source: {
+                        system: "NAMASTE",
+                        code: d.namaste,
+                        display: d.name
+                    },
+                    targets: [
+                        {
+                            system: "ICD-11",
+                            code: d.icd11,
+                            equivalence: "equivalent"
+                        },
+                        {
+                            system: "ICD-11-TM2",
+                            code: d.tm2,
+                            equivalence: "equivalent"
+                        }
+                    ]
+                })),
+                timestamp: new Date().toISOString(),
+                version: "1.0.0"
+            };
+            mappingOutput.textContent = JSON.stringify(mappingInfo, null, 2);
+
+            successMessage.classList.add('active');
+        });
+
+        // Generate FHIR Bundle
+        function generateFHIRBundle() {
+            return {
+                resourceType: "Bundle",
+                type: "transaction",
+                timestamp: new Date().toISOString(),
+                id: generateUUID(),
+                meta: {
+                    versionId: "1",
+                    lastUpdated: new Date().toISOString(),
+                    profile: ["http://hl7.org/fhir/StructureDefinition/Bundle"]
+                },
+                entry: selectedDiagnoses.map((d, index) => ({
+                    fullUrl: `urn:uuid:${generateUUID()}`,
+                    resource: {
+                        resourceType: "Condition",
+                        id: generateUUID(),
+                        meta: {
+                            profile: ["http://hl7.org/fhir/StructureDefinition/Condition"]
+                        },
+                        clinicalStatus: {
+                            coding: [{
+                                system: "http://terminology.hl7.org/CodeSystem/condition-clinical",
+                                code: "active",
+                                display: "Active"
+                            }]
+                        },
+                        verificationStatus: {
+                            coding: [{
+                                system: "http://terminology.hl7.org/CodeSystem/condition-ver-status",
+                                code: "confirmed",
+                                display: "Confirmed"
+                            }]
+                        },
+                        category: [{
+                            coding: [{
+                                system: "http://terminology.hl7.org/CodeSystem/condition-category",
+                                code: "problem-list-item",
+                                display: "Problem List Item"
+                            }]
+                        }],
+                        code: {
+                            coding: [
+                                {
+                                    system: "http://namaste.gov.in/CodeSystem/ayush-diagnoses",
+                                    code: d.namaste,
+                                    display: d.name,
+                                    userSelected: true
+                                },
+                                {
+                                    system: "http://id.who.int/icd11/mms",
+                                    code: d.icd11,
+                                    display: d.name
+                                },
+                                {
+                                    system: "http://id.who.int/icd11/tm2",
+                                    code: d.tm2,
+                                    display: d.name
+                                }
+                            ],
+                            text: d.name
+                        },
+                        subject: {
+                            reference: "Patient/example-abha-patient",
+                            display: "Demo Patient"
+                        },
+                        recordedDate: new Date().toISOString(),
+                        recorder: {
+                            reference: "Practitioner/example-ayush-practitioner",
+                            display: "Dr. Demo Practitioner"
+                        }
+                    },
+                    request: {
+                        method: "POST",
+                        url: "Condition"
+                    }
+                }))
+            };
+        }
+
+        // Generate UUID
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        // Tab functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.dataset.tab;
+                
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                tab.classList.add('active');
+                document.getElementById(tabName).classList.add('active');
+            });
+        });
+
+        // Initialize API output
+        apiOutput.textContent = `// Click "Generate FHIR Bundle" to see API endpoint details...
+
+Available Endpoints:
+- POST /fhir/r4/Bundle
+- GET /fhir/r4/CodeSystem/namaste
+- GET /fhir/r4/ConceptMap/namaste-to-icd11
+- POST /fhir/r4/ConceptMap/$translate
+- GET /fhir/r4/ValueSet/$expand
+
+Authentication: OAuth 2.0 with ABHA token
+Compliance: FHIR R4, ISO 22600, EHR Standards 2016`;
+
+        mappingOutput.textContent = `// Click "Generate FHIR Bundle" to see code mapping details...
+
+Supported Code Systems:
+- NAMASTE (National AYUSH Morbidity & Standardized Terminologies)
+- ICD-11 (International Classification of Diseases, 11th Revision)
+- ICD-11 TM2 (Traditional Medicine Module 2)
+- WHO International Terminologies for Ayurveda
+
+Mapping Features:
+- Bidirectional NAMASTE ↔ ICD-11 mapping
+- Automatic TM2 code generation
+- FHIR ConceptMap resources
+- Version tracking and audit trails`;
+    </script>
+</body>
+</html>
