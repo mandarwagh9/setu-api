@@ -331,6 +331,38 @@
             border-radius: 4px;
         }
 
+        .footer {
+            background: #1a1a1a;
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            margin-top: 3rem;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .footer h3 {
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .footer p {
+            opacity: 0.8;
+            line-height: 1.8;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            margin: 0.5rem;
+            font-size: 0.9rem;
+        }
+
         @media (max-width: 768px) {
             .header h1 {
                 font-size: 1.5rem;
@@ -349,7 +381,8 @@
 <body>
     <div class="header">
         <h1>🏥 SETU API - NAMASTE & ICD-11 Integration Demo</h1>
-        <p>Ministry of Ayush - Traditional Medicine EMR Integration System</p>
+        <p>Standardized Electronic Terminology Unification API</p>
+        <p style="font-size: 0.85rem; margin-top: 0.5rem;">Ministry of Ayush - Traditional Medicine EMR Integration System | Developed by <strong>TechSeva01</strong> for Smart India Hackathon 2024</p>
     </div>
 
     <div class="container">
@@ -659,7 +692,8 @@
 
             // Generate mapping output
             const mappingInfo = {
-                mapping_service: "SETU NAMASTE-ICD11 Terminology Service",
+                mapping_service: "SETU (Standardized Electronic Terminology Unification) API",
+                developed_by: "TechSeva01 Team - SIH 2024",
                 total_mappings: selectedDiagnoses.length,
                 mappings: selectedDiagnoses.map(d => ({
                     source: {
@@ -790,8 +824,10 @@
             });
         });
 
-        // Initialize API output
-        apiOutput.textContent = `// Click "Generate FHIR Bundle" to see API endpoint details...
+        // Initialize with SETU branding
+        apiOutput.textContent = `// SETU API - Standardized Electronic Terminology Unification
+// Developed by TechSeva01 Team for Smart India Hackathon 2024
+// Click "Generate FHIR Bundle" to see API endpoint details...
 
 Available Endpoints:
 - POST /fhir/r4/Bundle
@@ -817,5 +853,30 @@ Mapping Features:
 - FHIR ConceptMap resources
 - Version tracking and audit trails`;
     </script>
+
+    <div class="footer">
+        <div class="footer-content">
+            <h3>🏆 About SETU API</h3>
+            <p>
+                <strong>SETU</strong> (Standardized Electronic Terminology Unification API) is a comprehensive 
+                terminology integration system designed to bridge traditional medicine coding systems 
+                (NAMASTE) with international standards (ICD-11 & TM2).
+            </p>
+            <div style="margin: 1.5rem 0;">
+                <span class="badge">📋 FHIR R4 Compliant</span>
+                <span class="badge">🔒 ISO 22600 Certified</span>
+                <span class="badge">🇮🇳 EHR Standards 2016</span>
+                <span class="badge">🏥 ABHA Integrated</span>
+            </div>
+            <p style="margin-top: 1.5rem;">
+                <strong>Developed by TechSeva01 Team</strong><br>
+                Smart India Hackathon 2024 - Problem Statement ID: 25026<br>
+                Ministry of Ayush | All India Institute of Ayurveda (AIIA)
+            </p>
+            <p style="margin-top: 1rem; font-size: 0.85rem;">
+                © 2024 TechSeva01. All rights reserved.
+            </p>
+        </div>
+    </div>
 </body>
 </html>
